@@ -1,5 +1,5 @@
 {
-  "name": "dmail-grunt-tasks",
+  "name": "dcode-mail-grunt-tasks",
   "version": "1.0.0",
   "description": "DcodeMail grunt base tasks",
   "main": "index.js",
