@@ -141,6 +141,13 @@ module.exports = function (grunt) {
 
 	grunt.registerTask('project', 'Create a new clean email project', function (target) {
 
+		var options = this.options({
+			bootstrap: 'src/example',
+			images: 'src/images',
+			minified: 'src/images/minified',
+			dist: 'dist'
+		});
+
 		// get --name parameter
 		var nameParam = grunt.option('name') || null,
 		// get --subject parameter
@@ -190,10 +197,10 @@ module.exports = function (grunt) {
 				// create new folder with the project name from --name paramater
 				grunt.file.mkdir(project.getProjectPath(nameParam));
 
-				grunt.file.mkdir(project.getProjectPath(nameParam) + '/partials');
-				grunt.file.mkdir('src/images/original/' + nameParam);
+				//grunt.file.mkdir(project.getProjectPath(nameParam) + '/partials');
+				grunt.file.mkdir(options.images + '/' + nameParam);
 				// recursively copy all example files to the freshly created folder
-				grunt.file.recurse('src/example/mail-template/', project.copyTemplate);
+				grunt.file.recurse(options.bootstrap + '/', project.copyTemplate);
 
 				// get subject from --subject parameter or set the default one
 				var subject = subjectParam ? subjectParam : nameParam + ' Test';
@@ -238,14 +245,14 @@ module.exports = function (grunt) {
 
 				grunt.file.delete(projectPath);
 
-				if (grunt.file.isDir("dist/" + nameParam))
-					grunt.file.delete("dist/" + nameParam);
+				if (grunt.file.isDir(options.dist + "/" + nameParam))
+					grunt.file.delete(options.dist + "/" + nameParam);
 
-				if (grunt.file.isDir("src/images/original/" + nameParam))
-					grunt.file.delete("src/images/original/" + nameParam);
+				if (grunt.file.isDir(options.images + "/" + nameParam))
+					grunt.file.delete(options.images + "/" + nameParam);
 
-				if (grunt.file.isDir("src/images/minified/" + nameParam))
-					grunt.file.delete("src/images/minified/" + nameParam);
+				if (grunt.file.isDir(options.minified + "/" + nameParam))
+					grunt.file.delete(options.minified + "/" + nameParam);
 
 				project.removeProject(nameParam);
 
