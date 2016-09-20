@@ -195,7 +195,8 @@ module.exports = function (grunt) {
 					grunt.fail.warn('Project with the name "' + nameParam + '" already exists \n');
 
 				// create new folder with the project name from --name paramater
-				grunt.file.mkdir(project.getProjectPath(nameParam));
+				var mailPath = project.getProjectPath(nameParam);
+				grunt.file.mkdir(mailPath);
 
 				//grunt.file.mkdir(project.getProjectPath(nameParam) + '/partials');
 				grunt.file.mkdir(options.images + '/' + nameParam);
