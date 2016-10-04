@@ -2,7 +2,6 @@
  *    Set/Create/Delete a project (mail folder)
  *
  *    grunt project:config => will show the config file
- *    grunt project:list will list all project and its subject
  *    grunt project -subject="mail subject" set new mail subject for the active project
  *    grunt project -name=mail1 will set mail1 as active project for build/serve
  *    grunt project:new -name=mail2 -subject="mail subject" (optional) create new mail project
@@ -24,20 +23,15 @@ module.exports = function (grunt) {
 			var self = this,
 				projects = grunt.config('projects');
 
-			if (!projectName) {
-				for (var key in projects) {
-					if (projects.hasOwnProperty(key)) {
-						projectName = key;
-						break;
-					}
-				}
+			if (!projectName && projects.length > 0) {
+				projectName = projects[0];
+			}
+			if (!projectName && !projects.length) {
+				projectName = '_bootstrap';
 			}
 
-			if (self.exists(projectName)) {
-				return {
-					name: projectName,
-					subject: projects[projectName].subject
-				}
+			if (projectName && self.exists(projectName)) {
+				return projectName;
 			}
 			else {
 				grunt.fail.warn('Project " _' + projectName + '_ " *does not exist* \n');
@@ -48,13 +42,7 @@ module.exports = function (grunt) {
 		 * @returns {{name: string, subject: string}}||null
 		 */
 		getCurrentProject: function () {
-			var current = grunt.config('config.mail');
-			return current
-				? {
-				name: current,
-				subject: grunt.config('projects.' + current + '.subject')
-			}
-				: null;
+			return grunt.config('config.mail');
 		},
 
 		// SETTERS
@@ -63,9 +51,9 @@ module.exports = function (grunt) {
 		 * @param projectName {string}
 		 * @param subject {string}
 		 */
-		setCurrentProject: function (projectName, subject) {
+		setCurrentProject: function (projectName) {
 			grunt.config('config.mail', projectName);
-			grunt.config('config.subject', subject);
+			this.saveConfig();
 		},
 
 		// METHODS
@@ -75,8 +63,11 @@ module.exports = function (grunt) {
 		 * @returns {boolean}
 		 */
 		exists: function (projectName) {
+			var projectsList = grunt.config('projects'),
+				index = projectsList.indexOf(projectName);
+
 			return grunt.file.isDir(this.getProjectPath(projectName)) ||
-				grunt.config('projects.' + projectName);
+				index > -1;
 		},
 		/**
 		 * Adds a project object projectName: {subject: "Subject"} to the project list stored in options.projects
@@ -84,42 +75,63 @@ module.exports = function (grunt) {
 		 * @param subject {string}
 		 */
 		addProject: function (projectName, subject) {
-			grunt.config('projects.' + projectName, {
-				subject: subject
-			});
+			var projectList = grunt.config('projects');
+			projectList.push(projectName);
+			grunt.config('projects', projectList);
+			this.saveProjects();
 		},
 		/**
 		 * Remove a project from the project list
 		 * @param projectName {string}
 		 */
 		removeProject: function (projectName) {
-			grunt.config('projects.' + projectName, undefined);
+			var projectsList = grunt.config('projects'),
+				index = projectsList.indexOf(projectName);
+			if (index > -1) {
+				projectsList.splice(index, 1);
+			}
+			grunt.config('projects', projectsList);
+
+			this.saveProjects();
+
+			// if the current project is the deleted one, update it with the first that exists in the project list
+			var currentProject = this.getCurrentProject();
+
+			if (currentProject == projectName) {
+				this.setCurrentProject(this.getProject());
+			}
 		},
 		/**
 		 * Updates the subject in the config and project list and saves to json files
 		 * @param subject {string}
 		 */
+		// TODO: update this
 		updateSubject: function (subject) {
 			var self = this,
 				projectName = grunt.config('config.mail');
-			if (projectName && self.exists(projectName)) {
+			if (!projectName || !self.exists(projectName)) {
 
-				grunt.config('config.subject', subject);
-				grunt.config('projects.' + projectName + '.subject', subject);
+				grunt.fail.fatal('No current/active project set *or* the project does not exist\n');
+				return;
+			}
 
-				self.saveConfig();
-				self.saveProjects();
-			}
-			else {
-				grunt.fail.warn('No current/active project set *or* the project does not exist\n');
-			}
+			var mailConfigPath = grunt.config('paths.mail') + '/mailConfig.json',
+				mailConfig = grunt.file.readJSON(mailConfigPath),
+				newMailConfig = [];
+
+			mailConfig.forEach(function (obj) {
+				obj.subject = subject + ' ' + obj.lang;
+				newMailConfig.push(obj);
+			});
+
+			grunt.file.write(mailConfigPath, JSON.stringify(newMailConfig, null, '\t'));
 		},
 		/**
 		 * Saves the projects list from the grunt options.projects to the projects.json file
 		 */
 		saveConfig: function () {
 			var config = grunt.config('config');
-				config.src = undefined;
+			config.src = undefined;
 
 			grunt.file.write('config.json', JSON.stringify(config, null, '\t'));
 		},
@@ -165,8 +177,7 @@ module.exports = function (grunt) {
 			if (nameParam) {
 				var mail = project.getProject(nameParam);
 
-				project.setCurrentProject(mail.name, mail.subject);
-				project.saveConfig();
+				project.setCurrentProject(mail);
 				grunt.log.ok('Project set to *' + grunt.option('name') + '*');
 			}
 			// if the --subject param is present update the current project subject
@@ -207,33 +218,18 @@ module.exports = function (grunt) {
 				var subject = subjectParam ? subjectParam : nameParam + ' Test';
 
 				project.addProject(nameParam, subject);
-				project.setCurrentProject(nameParam, subject);
-
-				project.saveConfig();
-				project.saveProjects();
+				project.setCurrentProject(nameParam);
 
 				grunt.log.ok('Project *' + nameParam + '* created');
 				break;
 
 		/**
-		 * List all project present in projects.jsom
-		 */
-			case "list":
-				var projects = grunt.config('projects');
-				for (var key in projects) {
-					var pad = "                              ";
-					var result = (key + pad).slice(0, 30);
-					if (projects.hasOwnProperty(key)) {
-						grunt.log.ok(result['cyan'].bold + ' ' + projects[key].subject + "\n");
-					}
-				}
-				break;
-
-		/**
 		 * Will DELETE all files related to the project with provided --name :
-		 * - src/images/minified/projectName/**
-		 * - src/images/original/projectName/**
-		 * - mail/projectName/**
+		 * - source images
+		 * - minified images
+		 * - mail folder from templates
+		 * - translations
+		 * - built mail
 		 */
 			case "delete":
 				if (!nameParam)
@@ -255,17 +251,13 @@ module.exports = function (grunt) {
 				if (grunt.file.isDir(options.minified + "/" + nameParam))
 					grunt.file.delete(options.minified + "/" + nameParam);
 
+				if (grunt.file.isDir(grunt.config('paths.translations') + "/" + nameParam))
+					grunt.file.delete(grunt.config('paths.translations') + "/" + nameParam);
+
+				if (grunt.file.isDir(grunt.config('paths.translations') + "/json/" + nameParam))
+					grunt.file.delete(grunt.config('paths.translations') + "/json/" + nameParam);
+
 				project.removeProject(nameParam);
-
-				var currentProject = project.getCurrentProject();
-
-				if (currentProject && currentProject.name == nameParam) {
-					var curProject = project.getProject();
-					project.setCurrentProject(curProject.name, curProject.subject);
-				}
-
-				project.saveConfig();
-				project.saveProjects();
 
 				grunt.log.ok('Project ' + grunt.option('name') + ' deleted');
 				break;
