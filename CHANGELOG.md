@@ -1,3 +1,6 @@
+# v1.1.2
+- fix setLang task to stop grunt on error
+
 # v1.1.1
 - fix setlang task to provide feedback error when language is not provided for the litmus task
 

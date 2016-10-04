@@ -5,17 +5,19 @@ module.exports = function (grunt) {
 	 */
 	grunt.registerTask('setLang', '', function (target) {
 		var lang = grunt.option('lang');
-		if (lang) {
-			grunt.config('lang', '-' + lang);
-		}
-		else {
+
+		if (!lang) {
 			var configMail = grunt.file.readJSON(grunt.config('paths.projects') + '/' + grunt.config('config.mail') + '/mailConfig.json');
+
+			// if only one language for the mail
 			if (configMail.length === 1){
 				grunt.config('lang', '-' + configMail[0].lang);
 			}
 			else {
-				grunt.log.fail("This mail has several languages, please provide a language to proceed.")
+				grunt.fail.warn("This mail has several languages, please provide a language to proceed.")
 			}
 		}
+
+		grunt.config('lang', '-' + lang);
 	});
 };
