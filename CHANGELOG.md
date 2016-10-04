@@ -1,3 +1,6 @@
+# v1.1.3
+- execute pot2po conversion only if there is more than one language in mailConfig.json
+
 # v1.1.2
 - fix setLang task to stop grunt on error
 

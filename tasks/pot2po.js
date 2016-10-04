@@ -37,14 +37,16 @@ module.exports = function (grunt) {
 				});
 			};
 
-		mailConfig.forEach(function (config) {
-			var lang = config.lang;
+		if (mailConfig.length > 1) {
+			mailConfig.forEach(function (config) {
+				var lang = config.lang;
 
-			// update global translations
-			poUpdate(translationsPath, lang + '.po');
+				// update global translations
+				poUpdate(translationsPath, lang + '.po');
 
-			// update global translations
-			poUpdate(translationsPath + '/' + currentProject, lang + '.po');
-		});
+				// update global translations
+				poUpdate(translationsPath + '/' + currentProject, lang + '.po');
+			});
+		}
 	});
 };
