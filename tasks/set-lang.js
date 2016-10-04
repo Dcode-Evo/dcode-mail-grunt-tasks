@@ -14,7 +14,7 @@ module.exports = function (grunt) {
 				grunt.config('lang', '-' + configMail[0].lang);
 			}
 			else {
-				grunt.log.fail("This mail has two languages, please provide a language to proceed.")
+				grunt.log.fail("This mail has several languages, please provide a language to proceed.")
 			}
 		}
 	});
