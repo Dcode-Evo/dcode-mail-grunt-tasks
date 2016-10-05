@@ -4,15 +4,7 @@ module.exports = function (grunt, options) {
 	 * @returns {Array}
 	 */
 	var getProjectList = function () {
-		var projects = grunt.config('projects');
-		var array = [],
-			i = 0;
-
-		for (var project in projects) {
-			array[i] = project;
-			i++;
-		}
-		return array;
+		return grunt.config('projects');
 	};
 
 	/**

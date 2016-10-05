@@ -1,3 +1,6 @@
+# v1.1.5
+- fix `all` task due to the project list change from json to array
+
 # v1.1.4
 ### PROJECT TASK : Change the way the projects are managed in the machine: 
 - no more subject in the config.json, the subject comes now from the mailConfig and from the right language
